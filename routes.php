@@ -1,53 +1,14 @@
 <?php
-
-require 'functions.php';
-
-// Define all routes
 $routes = [
-    // Home page
     'home' => function () {
         include 'index.html';
     },
-
-    // Products page
-    'products' => function () {
-        $products = loadProducts();
-        renderProducts($products);
-    },
-
-    // Cart page
     'cart' => function () {
-        $products = loadProducts();
-        renderCart($products);
+        include 'cart.html';
     },
-
-    // Add to cart action
-    'cart/add' => function () {
-        $productId = $_POST['product_id'] ?? null;
-        if ($productId) {
-            addToCart($productId);
-        }
-        $products = loadProducts();
-        renderCart($products);
-    },
-
-    // Clear cart action
-    'cart/clear' => function () {
-        clearCart();
-        $products = loadProducts();
-        renderCart($products);
-    },
-
-    // Checkout page
     'checkout' => function () {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            handleCheckout();
-        } else {
-            include 'checkout.html';
-        }
+        include 'checkout.html';
     },
-
-    // Static pages
     'contact' => function () {
         include 'contact.html';
     },
@@ -57,8 +18,25 @@ $routes = [
     'privacy-policy' => function () {
         include 'privacy-policy.html';
     },
-    'terms-of-service' => function () {
-        include 'terms-of-service.html';
+    'api/products' => function () {
+        header('Content-Type: application/json');
+        echo file_get_contents('products.json');
+        exit;
     },
-];
+    'cart/add' => function () {
+        $productId = $_POST['product_id'] ?? null;
+        $quantity = $_POST['quantity'] ?? 1;
 
+        if ($productId) {
+            addToCart($productId, $quantity);
+        }
+        header('Location: /cart');
+        exit;
+    },
+    'cart/clear' => function () {
+        clearCart();
+        header('Location: /cart');
+        exit;
+    }
+];
+?>

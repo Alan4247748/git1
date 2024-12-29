@@ -4,13 +4,9 @@
   <meta charset="UTF-8">
   <title>Das Products | Filters, Papers, & Cones</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="csrf-token" content="{{ csrf_token() }}">
 
   <!-- Styles -->
   <link rel="stylesheet" href="/styles.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-
-  <!-- HTMX -->
   <script src="https://unpkg.com/htmx.org"></script>
 </head>
 <body>
@@ -20,7 +16,6 @@
   </a>
   <div>
     <a href="/">Products</a>
-    <a href="https://www.dasfilter.shop">Merch</a>
     <a href="/contact">Contact</a>
     <div class="cart-icon" hx-get="/cart" hx-trigger="click" hx-target="#cart-summary">
       🛒 <span id="cart-item-count">0</span>
@@ -28,67 +23,41 @@
   </div>
 </nav>
 
-<section id="cart-summary" class="cart-summary" hx-get="/cart.html" style="display: none;">
+<section id="cart-summary" class="cart-summary" hx-get="/index.php?page=cart" style="display: none;">
   <h3>Cart Summary</h3>
   <div id="cart-container"></div>
   <div class="cart-total">
     <strong>Total:</strong> <span id="cart-total">$0.00</span>
   </div>
-  <button onclick="window.location.href='/checkout'">Go to Checkout</button>
+  <button onclick="window.location.href='/index.php?page=checkout'">Go to Checkout</button>
 </section>
 
 <div class="tabs">
-  <button class="tab-button active" hx-get="/products" hx-target="#products-container" hx-vals='{"category":"All"}'>All Products</button>
-  <button class="tab-button" hx-get="/products" hx-target="#products-container" hx-vals='{"category":"Packages"}'>Packages</button>
-  <button class="tab-button" hx-get="/products" hx-target="#products-container" hx-vals='{"category":"Papers"}'>Papers</button>
-  <button class="tab-button" hx-get="/products" hx-target="#products-container" hx-vals='{"category":"Filters"}'>Filters</button>
-  <button class="tab-button" hx-get="/products" hx-target="#products-container" hx-vals='{"category":"Nanner Barrels"}'>Nanner Barrels</button>
+  <button class="tab-button active" hx-get="/index.php?page=api/products" hx-target="#products-container" hx-vals='{"category":"All"}'>All Products</button>
 </div>
 
-<section id="products-container" class="products-grid" hx-get="/products" hx-trigger="load"></section>
+<section id="products-container" class="products-grid" hx-get="/index.php?page=api/products" hx-trigger="load"></section>
 
 <footer>
   <div class="footer-container">
-    <!-- Left Section -->
     <div class="footer-left">
       <a href="/">
         <img src="/images/ab.png" alt="Das Logo" width="90">
       </a>
       <p class="tagline">FILTERS, PAPERS, AND CONES.</p>
-      <div class="social-links">
-        <button class="x-button">
-          <span class="x-logo">X</span> Follow @das_filter
-        </button>
-        <button class="ig-button">
-          📷 Follow @das_filter
-        </button>
-      </div>
     </div>
-
-    <!-- Middle Section: Site Map -->
     <div class="footer-center">
       <h3>Site Map</h3>
       <ul>
         <li><a href="/">Products</a></li>
         <li><a href="/contact">Contact</a></li>
         <li><a href="/legal">Legal</a></li>
-        <li><a href="/terms-of-service">Terms of Service</a></li>
         <li><a href="/privacy-policy">Privacy Policy</a></li>
       </ul>
     </div>
-
-    <!-- Right Section: Contact Info -->
     <div class="footer-right">
-      <h3>Company Address</h3>
-      <p>Das Filter, LLC</p>
-      <p>903 West Mary</p>
-      <p>Austin, Texas, 78704</p>
-      <h3>Phone</h3>
-      <p>+1-737-334-8042</p>
-      <h3>Business Hours</h3>
-      <p>Monday - Friday: 9 AM - 5 PM</p>
-      <p>Saturday: 10 AM - 4 PM</p>
-      <p>Sunday: Closed</p>
+      <h3>Contact Us</h3>
+      <p>Email: info@dasfilter.shop</p>
     </div>
   </div>
 </footer>
@@ -97,7 +66,7 @@
   document.addEventListener("DOMContentLoaded", () => {
     const productsContainer = document.getElementById("products-container");
 
-    fetch('/api/products')
+    fetch('/index.php?page=api/products')
       .then(response => response.json())
       .then(products => {
         productsContainer.innerHTML = products.map(product => `
@@ -107,7 +76,7 @@
               <h3>${product.name}</h3>
               <p>${product.description}</p>
               <p class="product-price">$${product.price.toFixed(2)}</p>
-              <button hx-post="/cart/add" hx-include="this" hx-target="#cart-item-count" hx-swap="outerHTML">
+              <button hx-post="/index.php?page=cart/add" hx-vals='{"product_id": ${product.product_id}, "quantity": 1}'>
                 Add to Cart
               </button>
             </div>
@@ -115,20 +84,10 @@
         `).join('');
       })
       .catch(error => {
-        console.error("Failed to load products:", error);
+        console.error('Error fetching products:', error);
         productsContainer.innerHTML = "<p>Failed to load products. Please try again later.</p>";
       });
   });
-
-  function updateCartCount() {
-    fetch('/cart')
-      .then(response => response.json())
-      .then(cart => {
-        const count = Object.values(cart).reduce((total, item) => total + item.quantity, 0);
-        document.getElementById("cart-item-count").textContent = count;
-      })
-      .catch(error => console.error("Failed to update cart count:", error));
-  }
 </script>
 </body>
 </html>
