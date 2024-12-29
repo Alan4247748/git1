@@ -1,168 +1,216 @@
 <?php
-// Load products from the JSON file
+require 'vendor/autoload.php';
+
+use net\authorize\api\contract\v1 as AnetAPI;
+use net\authorize\api\controller as AnetController;
+
+// Initialize session for cart and inventory
+session_start();
+if (!isset($_SESSION['cart'])) $_SESSION['cart'] = [];
+if (!isset($_SESSION['inventory'])) $_SESSION['inventory'] = initializeInventory();
+
+// Load products
 $products = json_decode(file_get_contents('products.json'), true);
 
 // Handle routing
-$page = isset($_GET['page']) ? $_GET['page'] : 'home';
-
-// Start output buffering
+$page = $_GET['page'] ?? 'home';
 ob_start();
 
-// Route logic
 switch ($page) {
     case 'products':
-        // Serve products filtered by category if provided
-        $category = $_GET['category'] ?? 'All';
-        if ($category === 'All') {
-            echo json_encode($products);
-        } else {
-            $filteredProducts = array_filter($products, function ($product) use ($category) {
-                return strpos($product['categories'], $category) !== false;
-            });
-            echo json_encode(array_values($filteredProducts));
-        }
-        exit;
+        renderProducts();
+        break;
 
     case 'cart':
-        include 'cart.html';
+        renderCart();
+        break;
+
+    case 'cart/add':
+        addToCart($_POST['product_id']);
+        renderCart();
+        break;
+
+    case 'cart/clear':
+        $_SESSION['cart'] = [];
+        renderCart();
         break;
 
     case 'checkout':
-        include 'checkout.html';
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            handleCheckout();
+        } else {
+            renderCheckout();
+        }
         break;
 
-    case 'contact':
-        include 'contact.html';
-        break;
-
-    case 'legal':
-        include 'legal.html';
-        break;
-
-    case 'privacy-policy':
-        include 'privacy-policy.html';
-        break;
-
-    case 'terms-of-service':
-        include 'terms-of-service.html';
+    case 'dashboard':
+        renderDashboard();
         break;
 
     default:
-        // Render the main index page
-        renderIndex($products);
-        break;
+        renderIndex();
 }
 
-// Get the buffered content and output it
 echo ob_get_clean();
 
-// Function to render the main index page with embedded product categories
-function renderIndex($products)
-{
+function initializeInventory() {
+    global $products;
+    $inventory = [];
+    foreach ($products as $product) {
+        $inventory[$product['product_id']] = $product['inventory'];
+    }
+    return $inventory;
+}
+
+function renderIndex() {
+    include 'index.html';
+}
+
+function renderProducts() {
+    global $products;
     ?>
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <title>Das Products | Filters, Papers, & Cones</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <link rel="stylesheet" href="/styles.css">
-        <script src="https://unpkg.com/htmx.org"></script>
-    </head>
-    <body>
-        <nav class="navbar">
-            <a href="/">
-                <img src="/images/ab2.png" alt="Das Logo" width="90">
-            </a>
-            <div>
-                <a href="/">Products</a>
-                <a href="/contact">Contact</a>
-                <div class="cart-icon" hx-get="/?page=cart" hx-trigger="click" hx-target="#cart-summary">
-                    🛒 <span id="cart-item-count">0</span>
-                </div>
+    <div class="products-grid">
+        <?php foreach ($products as $product): ?>
+            <div class="product-card">
+                <img src="<?= htmlspecialchars($product['image']) ?>" alt="<?= htmlspecialchars($product['name']) ?>">
+                <h3><?= htmlspecialchars($product['name']) ?></h3>
+                <p><?= htmlspecialchars($product['description']) ?></p>
+                <p>$<?= number_format($product['price'], 2) ?></p>
+                <button hx-post="/?page=cart/add" hx-vals='{"product_id":<?= $product['product_id'] ?>}' hx-target="#cart-summary">
+                    Add to Cart
+                </button>
             </div>
-        </nav>
-
-        <section id="cart-summary" class="cart-summary" style="display: none;">
-            <h3>Cart Summary</h3>
-            <div id="cart-container"></div>
-            <div class="cart-total">
-                <strong>Total:</strong> <span id="cart-total">$0.00</span>
-            </div>
-            <button onclick="window.location.href='/?page=checkout'">Go to Checkout</button>
-        </section>
-
-        <div class="tabs">
-            <button class="tab-button active" hx-get="/?page=products&category=All" hx-target="#products-container">All Products</button>
-            <button class="tab-button" hx-get="/?page=products&category=Packages" hx-target="#products-container">Packages</button>
-            <button class="tab-button" hx-get="/?page=products&category=Papers" hx-target="#products-container">Papers</button>
-            <button class="tab-button" hx-get="/?page=products&category=Filters" hx-target="#products-container">Filters</button>
-            <button class="tab-button" hx-get="/?page=products&category=Nanner Barrels" hx-target="#products-container">Nanner Barrels</button>
-        </div>
-
-        <section id="products-container" class="products-grid">
-            <?php foreach ($products as $product): ?>
-                <div class="product-card">
-                    <img src="<?= htmlspecialchars($product['image']) ?>" alt="<?= htmlspecialchars($product['name']) ?>" class="product-image">
-                    <div class="product-details">
-                        <h3><?= htmlspecialchars($product['name']) ?></h3>
-                        <p><?= htmlspecialchars($product['description']) ?></p>
-                        <p class="product-price">$<?= number_format($product['price'], 2) ?></p>
-                        <button hx-post="/cart/add" hx-include="this" hx-target="#cart-item-count" hx-swap="outerHTML">
-                            Add to Cart
-                        </button>
-                    </div>
-                </div>
-            <?php endforeach; ?>
-        </section>
-
-        <footer>
-            <div class="footer-container">
-                <div class="footer-left">
-                    <a href="/">
-                        <img src="/images/ab.png" alt="Das Logo" width="90">
-                    </a>
-                    <p class="tagline">FILTERS, PAPERS, AND CONES.</p>
-                </div>
-                <div class="footer-center">
-                    <h3>Site Map</h3>
-                    <ul>
-                        <li><a href="/">Products</a></li>
-                        <li><a href="/contact">Contact</a></li>
-                        <li><a href="/legal">Legal</a></li>
-                        <li><a href="/terms-of-service">Terms of Service</a></li>
-                        <li><a href="/privacy-policy">Privacy Policy</a></li>
-                    </ul>
-                </div>
-                <div class="footer-right">
-                    <h3>Contact Info</h3>
-                    <p>Das Filter, LLC</p>
-                    <p>903 West Mary, Austin, TX</p>
-                    <p>+1-737-334-8042</p>
-                </div>
-            </div>
-        </footer>
-
-        <script>
-            document.addEventListener("DOMContentLoaded", () => {
-                const cartIcon = document.querySelector("#cart-item-count");
-                if (cartIcon) {
-                    updateCartCount();
-                }
-            });
-
-            function updateCartCount() {
-                fetch('/?page=cart')
-                    .then(response => response.json())
-                    .then(cart => {
-                        const count = Object.values(cart).reduce((sum, item) => sum + item.quantity, 0);
-                        document.getElementById("cart-item-count").textContent = count;
-                    })
-                    .catch(console.error);
-            }
-        </script>
-    </body>
-    </html>
+        <?php endforeach; ?>
+    </div>
     <?php
+}
+
+function renderCart() {
+    ?>
+    <div>
+        <?php if (empty($_SESSION['cart'])): ?>
+            <p>Your cart is empty.</p>
+        <?php else: ?>
+            <ul>
+                <?php foreach ($_SESSION['cart'] as $productId => $quantity): ?>
+                    <li><?= htmlspecialchars(getProduct($productId)['name']) ?> (x<?= $quantity ?>)</li>
+                <?php endforeach; ?>
+            </ul>
+        <?php endif; ?>
+        <button hx-post="/?page=cart/clear" hx-target="#cart-summary">Clear Cart</button>
+        <a href="/?page=checkout">Proceed to Checkout</a>
+    </div>
+    <?php
+}
+
+function renderCheckout() {
+    ?>
+    <form hx-post="/?page=checkout" hx-target="#checkout-summary">
+        <h2>Shipping Information</h2>
+        <input type="text" name="name" placeholder="Name" required>
+        <textarea name="address" placeholder="Address" required></textarea>
+        <input type="email" name="email" placeholder="Email" required>
+
+        <h2>Payment Information</h2>
+        <input type="text" name="card_number" placeholder="Card Number" required>
+        <input type="text" name="exp_date" placeholder="Expiration Date (MM/YY)" required>
+        <input type="text" name="cvv" placeholder="CVV" required>
+        <button type="submit">Place Order</button>
+    </form>
+    <?php
+}
+
+function renderDashboard() {
+    ?>
+    <h1>Inventory Dashboard</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Stock</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($_SESSION['inventory'] as $productId => $stock): ?>
+                <tr>
+                    <td><?= htmlspecialchars(getProduct($productId)['name']) ?></td>
+                    <td><?= $stock ?></td>
+                </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+    <?php
+}
+
+function handleCheckout() {
+    $total = calculateTotal();
+    $response = processPayment($total);
+
+    if ($response->getMessages()->getResultCode() === 'Ok') {
+        updateInventory();
+        $_SESSION['cart'] = [];
+        echo "<p>Payment successful! Thank you for your order.</p>";
+    } else {
+        echo "<p>Payment failed: " . $response->getMessages()->getMessage()[0]->getText() . "</p>";
+    }
+}
+
+function addToCart($productId) {
+    if ($_SESSION['inventory'][$productId] > 0) {
+        $_SESSION['cart'][$productId] = ($_SESSION['cart'][$productId] ?? 0) + 1;
+        $_SESSION['inventory'][$productId]--;
+    } else {
+        echo "<p>Product out of stock!</p>";
+    }
+}
+
+function getProduct($productId) {
+    global $products;
+    foreach ($products as $product) {
+        if ($product['product_id'] == $productId) {
+            return $product;
+        }
+    }
+    return null;
+}
+
+function calculateTotal() {
+    global $products;
+    $total = 0;
+    foreach ($_SESSION['cart'] as $id => $qty) {
+        $total += $products[$id - 1]['price'] * $qty;
+    }
+    return $total;
+}
+
+function processPayment($amount) {
+    $auth = new AnetAPI\MerchantAuthenticationType();
+    $auth->setName('your_login_id');
+    $auth->setTransactionKey('your_transaction_key');
+
+    $creditCard = new AnetAPI\CreditCardType();
+    $creditCard->setCardNumber("4111111111111111");
+    $creditCard->setExpirationDate("2030-12");
+
+    $payment = new AnetAPI\PaymentType();
+    $payment->setCreditCard($creditCard);
+
+    $transactionRequest = new AnetAPI\TransactionRequestType();
+    $transactionRequest->setTransactionType("authCaptureTransaction");
+    $transactionRequest->setAmount($amount);
+    $transactionRequest->setPayment($payment);
+
+    $request = new AnetAPI\CreateTransactionRequest();
+    $request->setMerchantAuthentication($auth);
+    $request->setTransactionRequest($transactionRequest);
+
+    $controller = new AnetController\CreateTransactionController($request);
+    return $controller->executeWithApiResponse(AnetAPI\ANetEnvironment::SANDBOX);
+}
+
+function updateInventory() {
+    foreach ($_SESSION['cart'] as $id => $qty) {
+        $_SESSION['inventory'][$id] -= $qty;
+    }
 }
 ?>
