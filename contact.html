@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en" hx-boost="true">
+<head>
+  <meta charset="UTF-8">
+  <title>Das Products | Filters, Papers, & Cones</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+  <!-- HTMX -->
+  <script src="https://unpkg.com/htmx.org"></script>
+</head>
+<body>
+<nav class="navbar">
+  <a href="/">
+    <img src="/images/ab2.png" alt="Das Logo" width="90">
+  </a>
+  <div>
+    <a href="/">Products</a>
+    <a href="https://www.dasfilter.shop">Merch</a>
+    <a href="/contact">Contact</a>
+    <div class="cart-icon" hx-get="/cart" hx-trigger="click" hx-target="#cart-summary">
+      🛒 <span id="cart-item-count">0</span>
+    </div>
+  </div>
+</nav>
+
+<section id="cart-summary" class="cart-summary" hx-get="/cart.html" style="display: none;">
+  <h3>Cart Summary</h3>
+  <div id="cart-container"></div>
+  <div class="cart-total">
+    <strong>Total:</strong> <span id="cart-total">$0.00</span>
+  </div>
+  <button onclick="window.location.href='/checkout'">Go to Checkout</button>
+</section>
+
+<!-- Main Content -->
+<div class="container">
+  <h1>Contact</h1>
+  
+  <!-- Contact Form -->
+  <form id="contact-form" class="contact-form">
+    <label for="name">Name</label>
+    <input type="text" id="name" placeholder="Your Name" required>
+
+    <label for="email">Email</label>
+    <input type="email" id="email" placeholder="Your Email" required>
+
+    <label for="message">Message</label>
+    <textarea id="message" rows="5" placeholder="Your Message" required></textarea>
+
+    <button type="submit" class="submit-button">Send Message</button>
+  </form>
+
+  <!-- FAQ Section -->
+  <h1>FAQ's</h1>
+  <div class="container-tight">
+    <div class="faq-section">
+      <div class="faq-question-wrap">
+        <a href="#" class="faq-question-bar w-inline-block">
+          <div class="question-title">Shipping time?</div><img src="images/Plus.svg" alt="Expand" class="plus">
+        </a>
+        <div class="faq-content">
+          <p class="faq-paragraph">All orders are processed in 1-2 business days, tracking is emailed.</p>
+        </div>
+      </div>
+      <div class="faq-question-wrap">
+        <a href="#" class="faq-question-bar w-inline-block">
+          <div class="question-title">What is Activated Carbon?</div><img src="images/Plus.svg" alt="Expand" class="plus">
+        </a>
+        <div class="faq-content">
+          <p class="faq-paragraph">Most organic material can be turned into "activated carbon." In DAS products, the husk of a coconut shell is used.</p>
+        </div>
+      </div>
+      <div class="faq-question-wrap">
+        <a href="#" class="faq-question-bar w-inline-block">
+          <div class="question-title">Affiliate Program</div><img src="images/Plus.svg" alt="Expand" class="plus">
+        </a>
+        <div class="faq-content">
+          <p class="faq-paragraph">For more details DM @das_filter on <a href="https://www.x.com/das_filter/" target="_blank">x.com</a>.</p>
+        </div>
+      </div>
+      <div class="faq-question-wrap">
+        <a href="#" class="faq-question-bar w-inline-block">
+          <div class="question-title">Wholesale</div><img src="images/Plus.svg" alt="Expand" class="plus">
+        </a>
+        <div class="faq-content">
+          <p class="faq-paragraph">Coming Soon! January 2025.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Footer -->
+<footer>
+  <div class="footer-container">
+    <div class="footer-left">
+      <a href="index.html">
+        <img src="images/ab.png" alt="Das Logo" width="90">
+      </a>
+      <p class="tagline">FILTERS, PAPERS, AND CONES.</p>
+      <div class="x-follow-button">
+        <a href="https://x.com/das_filter" target="_blank" rel="noopener">
+          <button class="x-button">
+            <span class="x-logo">𝕏</span> Follow @das_filter
+          </button>
+        </a>
+        <a href="https://instagram.com/das_filter" target="_blank" rel="noopener">
+          <button class="ig-button">
+            📷 Follow @das_filter
+          </button>
+        </a>
+      </div>
+    </div>
+
+    <div class="footer-center">
+      <h2>Site Map</h2>
+      <ul>
+        <li><a href="index.html">Products</a></li>
+        <li><a href="contact.html">Contact</a></li>
+        <li><a href="legal.html">Legal</a></li>
+        <li><a href="terms-of-service.html">Terms Of Service</a></li>
+        <li><a href="privacy-policy.html">Privacy Policy</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-right">
+      <h2>Company Address</h2>
+      <p>Das Filter, LLC</p>
+      <p>903 West Mary<br>Austin, Texas<br>78704</p>
+      <h2>Phone</h2>
+      <p>+1-737-334-8042</p>
+    </div>
+  </div>
+</footer>
+
+<!-- JavaScript -->
+<script>
+  // Form submission
+  document.getElementById('contact-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const name = document.getElementById('name').value;
+    const email = document.getElementById('email').value;
+    const message = document.getElementById('message').value;
+
+    if (name && email && message) {
+      alert(`Thank you, ${name}! Your message has been sent.`);
+      document.getElementById('contact-form').reset();
+    } else {
+      alert("Please fill out all fields.");
+    }
+  });
+
+  // FAQ Toggle
+  document.querySelectorAll('.faq-question-bar').forEach(question => {
+    question.addEventListener('click', function(e) {
+      e.preventDefault();
+      const content = this.nextElementSibling;
+      content.style.display = content.style.display === 'block' ? 'none' : 'block';
+    });
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkout | Das Products</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <script src="https://unpkg.com/htmx.org"></script>
+</head>
+<body>
+  <h1>Checkout</h1>
+
+  <!-- Cart Summary -->
+  <section id="cart-summary" hx-get="/cart" hx-trigger="load">
+    <h2>Your Cart</h2>
+    <div id="cart-items">
+      <!-- Cart items will be dynamically loaded here -->
+    </div>
+    <div class="cart-total">
+      <strong>Total:</strong> <span id="cart-total">$0.00</span>
+    </div>
+  </section>
+
+  <!-- Checkout Form -->
+  <form action="/checkout" method="POST">
+    <h2>Shipping Information</h2>
+    <label for="name">Name:</label>
+    <input type="text" name="name" id="name" required>
+    <label for="address">Address:</label>
+    <textarea name="address" id="address" required></textarea>
+    <label for="email">Email:</label>
+    <input type="email" name="email" id="email" required>
+
+    <h2>Payment Information</h2>
+    <label for="card_number">Card Number:</label>
+    <input type="text" name="card_number" id="card_number" required>
+    <label for="exp_date">Expiration Date:</label>
+    <input type="text" name="exp_date" id="exp_date" placeholder="MM/YY" required>
+    <label for="cvv">CVV:</label>
+    <input type="text" name="cvv" id="cvv" required>
+
+    <button type="submit">Place Order</button>
+  </form>
+</body>
+</html>
