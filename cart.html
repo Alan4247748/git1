@@ -1,20 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cart | Das Products</title>
-  <link rel="stylesheet" href="/css/styles.css">
-  <script src="https://unpkg.com/htmx.org"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cart | Das Products</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <script src="https://unpkg.com/htmx.org"></script>
 </head>
 <body>
-  <h1>Your Cart</h1>
-  <div id="cart-container" hx-get="/cart" hx-trigger="load">
-    <!-- Cart items dynamically loaded here -->
-  </div>
-  <div class="cart-actions">
-    <button hx-post="/cart/clear" hx-swap="outerHTML">Clear Cart</button>
-    <button onclick="window.location.href='/checkout.html'">Proceed to Checkout</button>
-  </div>
+    <h1>Your Cart</h1>
+    <div id="cart-container" hx-get="/index.php?page=cart" hx-trigger="load">
+        <!-- Cart items dynamically loaded here -->
+    </div>
+    <div class="cart-actions">
+        <button hx-post="/index.php?page=cart/clear" hx-swap="outerHTML">Clear Cart</button>
+        <button onclick="window.location.href='/checkout.html'">Proceed to Checkout</button>
+    </div>
 </body>
 </html>
