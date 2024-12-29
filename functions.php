@@ -1,76 +1,15 @@
 <?php
-require 'vendor/autoload.php'; // For Authorize.net or other libraries
-use net\authorize\api\contract\v1 as AnetAPI;
-use net\authorize\api\controller as AnetController;
 
-// Start session
-session_start();
-if (!isset($_SESSION['cart'])) $_SESSION['cart'] = [];
-
-// Load product data
-$productsFile = __DIR__ . '/products.json';
-if (!file_exists($productsFile)) {
-    die("Error: 'products.json' file is missing!");
-}
-$products = json_decode(file_get_contents($productsFile), true);
-
-// Handle routing
-$page = $_GET['page'] ?? 'home';
-
-switch ($page) {
-    case 'home':
-        include 'index.html';
-        break;
-
-    case 'products':
-        renderProducts($products);
-        break;
-
-    case 'cart':
-        renderCart($products);
-        break;
-
-    case 'cart/add':
-        addToCart($_POST['product_id'] ?? null);
-        renderCart($products);
-        break;
-
-    case 'cart/clear':
-        $_SESSION['cart'] = [];
-        renderCart($products);
-        break;
-
-    case 'checkout':
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            handleCheckout();
-        } else {
-            include 'checkout.html';
-        }
-        break;
-
-    case 'contact':
-        include 'contact.html';
-        break;
-
-    case 'legal':
-        include 'legal.html';
-        break;
-
-    case 'privacy-policy':
-        include 'privacy-policy.html';
-        break;
-
-    case 'terms-of-service':
-        include 'terms-of-service.html';
-        break;
-
-    default:
-        http_response_code(404);
-        echo "<h1>404 Not Found</h1>";
-        break;
+// Load products from JSON
+function loadProducts() {
+    $productsFile = __DIR__ . '/products.json';
+    if (!file_exists($productsFile)) {
+        die("Error: 'products.json' file is missing!");
+    }
+    return json_decode(file_get_contents($productsFile), true);
 }
 
-// Functions
+// Render products
 function renderProducts($products) {
     echo '<div class="products-grid">';
     foreach ($products as $product) {
@@ -89,6 +28,7 @@ function renderProducts($products) {
     echo '</div>';
 }
 
+// Render cart
 function renderCart($products) {
     echo '<div id="cart-summary">';
     if (empty($_SESSION['cart'])) {
@@ -108,30 +48,34 @@ function renderCart($products) {
     echo '</div>';
 }
 
+// Add to cart
 function addToCart($productId) {
-    if (!$productId) {
-        echo "<p>Invalid product.</p>";
-        return;
-    }
     if (!isset($_SESSION['cart'][$productId])) {
         $_SESSION['cart'][$productId] = 0;
     }
     $_SESSION['cart'][$productId]++;
 }
 
+// Clear cart
+function clearCart() {
+    $_SESSION['cart'] = [];
+}
+
+// Handle checkout
 function handleCheckout() {
     $total = calculateTotal();
     $success = processPayment($total);
     if ($success) {
-        $_SESSION['cart'] = [];
+        clearCart();
         echo "<p>Payment successful! Thank you for your order.</p>";
     } else {
         echo "<p>Payment failed. Please try again.</p>";
     }
 }
 
+// Calculate total
 function calculateTotal() {
-    global $products;
+    $products = loadProducts();
     $total = 0;
     foreach ($_SESSION['cart'] as $productId => $quantity) {
         $product = $products[$productId - 1] ?? null;
@@ -142,9 +86,10 @@ function calculateTotal() {
     return $total;
 }
 
+// Simulate payment processing
 function processPayment($amount) {
-    // Simulated payment logic
-    return $amount > 0; // Replace with Authorize.net integration
+    // Replace with actual payment gateway integration
+    return $amount > 0;
 }
-?>
 
+?>
